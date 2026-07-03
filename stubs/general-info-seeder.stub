@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use App\Models\GeneralInfo;
+use Illuminate\Database\Seeder;
+
+final class GeneralInfoSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $generalInfo = GeneralInfo::singletonOrCreate([
+            'data' => [
+                'email' => 'info@example.com',
+                'phone' => '+1 (305) 555-0123',
+                'address' => '123 Main Street, Miami, FL 33101',
+            ],
+            'images' => [],
+            'rich_text' => [],
+        ]);
+
+        $data = $generalInfo->data ?? [];
+        $defaults = [
+            'email' => 'info@example.com',
+            'phone' => '+1 (305) 555-0123',
+            'address' => '123 Main Street, Miami, FL 33101',
+        ];
+        foreach ($defaults as $key => $value) {
+            if (! is_string($data[$key] ?? null) || trim($data[$key]) === '') {
+                $data[$key] = $value;
+            }
+        }
+
+        if ($data !== ($generalInfo->data ?? [])) {
+            $generalInfo->forceFill([
+                'data' => $data,
+                'images' => $generalInfo->images ?? [],
+                'rich_text' => $generalInfo->rich_text ?? [],
+            ])->save();
+        }
+    }
+}

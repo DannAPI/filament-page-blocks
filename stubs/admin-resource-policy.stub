@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ policyNamespace }};
+
+use {{ modelFqn }};
+use Illuminate\Contracts\Auth\Authenticatable;
+use DannAPI\FilamentPageBlocks\Support\RoleAccess;
+
+final readonly class {{ modelClass }}Policy
+{
+    public function __construct(private RoleAccess $access) {}
+
+    public function viewAny(Authenticatable $user): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.viewAny');
+    }
+
+    public function view(Authenticatable $user, {{ modelClass }} $record): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.view');
+    }
+
+    public function create(Authenticatable $user): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.create');
+    }
+
+    public function update(Authenticatable $user, {{ modelClass }} $record): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.update');
+    }
+
+    public function delete(Authenticatable $user, {{ modelClass }} $record): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.delete');
+    }
+
+    public function deleteAny(Authenticatable $user): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.delete');
+    }
+
+    public function restore(Authenticatable $user, {{ modelClass }} $record): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.restore');
+    }
+
+    public function restoreAny(Authenticatable $user): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.restore');
+    }
+
+    public function forceDelete(Authenticatable $user, {{ modelClass }} $record): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.forceDelete');
+    }
+
+    public function forceDeleteAny(Authenticatable $user): bool
+    {
+        return $this->access->allows($user, '{{ permissionPrefix }}.forceDelete');
+    }
+}

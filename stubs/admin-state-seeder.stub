@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use DannAPI\FilamentPageBlocks\Support\AdminStateRestorer;
+use Illuminate\Database\Seeder;
+
+final class {{ class }} extends Seeder
+{
+    public function run(AdminStateRestorer $restorer): void
+    {
+        $restorer->restore($this->state());
+    }
+
+    /** @return array<string, mixed> */
+    private function state(): array
+    {
+        return {{ state }};
+    }
+}

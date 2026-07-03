@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'group' => 'General info',
+    'permissions' => [
+        'general_info.viewAny' => 'View general information',
+        'general_info.view' => 'View general information record',
+        'general_info.create' => 'Create general information record',
+        'general_info.update' => 'Update general information',
+    ],
+];

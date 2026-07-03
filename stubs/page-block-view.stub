@@ -1,0 +1,3 @@
+<section class="page-block page-block--{{ identifier }}">
+    <h2>{{ $data->get('title') }}</h2>
+</section>

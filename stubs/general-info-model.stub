@@ -1,0 +1,12 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use DannAPI\FilamentPageBlocks\Models\GeneralInfo as BaseGeneralInfo;
+
+final class GeneralInfo extends BaseGeneralInfo
+{
+    protected $fillable = ['data', 'images', 'rich_text'];
+}

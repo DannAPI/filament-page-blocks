@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use DannAPI\FilamentPageBlocks\Blocks\HeroBlock;
+use DannAPI\FilamentPageBlocks\Blocks\RichTextBlock;
+use DannAPI\FilamentPageBlocks\Enums\PageStatus;
+use DannAPI\FilamentPageBlocks\Models\Page;
+use DannAPI\FilamentPageBlocks\Support\PageBlockSynchronizer;
+use Illuminate\Database\Seeder;
+
+final class ExamplePageSeeder extends Seeder
+{
+    public function run(PageBlockSynchronizer $synchronizer): void
+    {
+        $page = Page::query()->updateOrCreate(
+            ['slug' => 'example-page'],
+            [
+                'title' => 'Example page',
+                'status' => PageStatus::Published,
+                // 'is_homepage' => true, // Only one Page may be configured as the homepage.
+                'seo_title' => 'Example page',
+                'seo_description' => 'An example page created by Filament Page Blocks.',
+            ],
+        );
+
+        $synchronizer->sync($page, [
+            [
+                'type' => HeroBlock::getName(),
+                'data' => [
+                    'title' => 'Build pages from reusable blocks',
+                    'text' => 'This page was created by ExamplePageSeeder.',
+                    'image' => null,
+                    'button_text' => 'Back to homepage',
+                    'button_url' => '/',
+                ],
+            ],
+            [
+                'type' => RichTextBlock::getName(),
+                'data' => [
+                    'heading' => 'Seeder example',
+                    'content' => '<p>Edit <strong>database/seeders/ExamplePageSeeder.php</strong> to learn how pages and ordered blocks are created programmatically.</p>',
+                ],
+            ],
+        ], systemManaged: false);
+    }
+}

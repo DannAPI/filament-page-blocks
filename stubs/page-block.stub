@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use DannAPI\FilamentPageBlocks\Blocks\AbstractBlock;
+
+final class {{ class }} extends AbstractBlock
+{
+    public static function getName(): string
+    {
+        return '{{ identifier }}';
+    }
+
+    public static function getLabel(): string
+    {
+        return '{{ label }}';
+    }
+
+    public static function getIcon(): string
+    {
+        return 'heroicon-o-square-3-stack-3d';
+    }
+
+    public static function isReusable(): bool
+    {
+        return false;
+    }
+
+    public static function form(): array
+    {
+        return [
+            self::text('title', required: true, maxLength: 160),
+        ];
+    }
+
+    public static function view(): string
+    {
+        return '{{ view }}';
+    }
+
+    public static function summary(array $data): string
+    {
+        return trim(class_basename(self::class)) ?: self::getLabel();
+    }
+}
