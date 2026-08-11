@@ -220,10 +220,13 @@ final class AdminNavigationManager
             }
 
             if ($isDropdown) {
+                $isChildItemActive = $item->isChildItemsActive();
+
                 $item->extraAttributes([
                     'class' => 'fi-fpb-navigation-dropdown',
-                    'x-data' => '{ fpbDropdownOpen: false }',
+                    'x-data' => '{ fpbDropdownOpen: '.($isChildItemActive ? 'true' : 'false').' }',
                     'x-bind:class' => "{ 'fi-fpb-navigation-dropdown-open': fpbDropdownOpen }",
+                    'x-on:livewire:navigated.window' => "if (\$el.classList.contains('fi-sidebar-item-has-active-child-items')) { fpbDropdownOpen = true }",
                     'x-on:click.capture' => "if (\$event.target.closest('.fi-sidebar-item-btn') === \$event.currentTarget.querySelector(':scope > .fi-sidebar-item-btn')) { \$event.preventDefault(); \$event.stopPropagation(); fpbDropdownOpen = ! fpbDropdownOpen }",
                 ]);
             }
