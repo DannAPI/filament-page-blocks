@@ -241,6 +241,16 @@ return [
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ],
+        'asset_urls' => [
+            // Remote assets are rendered by the visitor's browser; the package never downloads them server-side.
+            'remote_https_enabled' => true,
+            'remote_ports' => [443],
+            'allowed_extensions' => [
+                'image' => ['jpg', 'jpeg', 'png', 'webp'],
+                'video' => ['mp4', 'webm', 'mov'],
+                'file' => ['pdf', 'txt', 'doc', 'docx', 'xls', 'xlsx'],
+            ],
+        ],
     ],
     'fields' => [
         'rich_text' => [

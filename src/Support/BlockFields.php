@@ -6,6 +6,7 @@ namespace DannAPI\FilamentPageBlocks\Support;
 
 use Closure;
 use DannAPI\FilamentPageBlocks\Data\BlockRelationDefinition;
+use DannAPI\FilamentPageBlocks\Rules\SafeAssetSource;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\CodeEditor;
@@ -53,6 +54,85 @@ final class BlockFields
         }
 
         return $this->configure($field, $default, $required, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
+    public function integer(
+        string $name,
+        ?int $default = null,
+        bool $required = false,
+        ?int $minValue = null,
+        ?int $maxValue = null,
+        ?string $label = null,
+        array|string $rules = [],
+    ): TextInput {
+        $field = TextInput::make($name)->integer();
+        if ($minValue !== null) {
+            $field->minValue($minValue);
+        }
+        if ($maxValue !== null) {
+            $field->maxValue($maxValue);
+        }
+
+        return $this->configure($field, $default, $required, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
+    public function number(
+        string $name,
+        int|float|null $default = null,
+        bool $required = false,
+        int|float|null $minValue = null,
+        int|float|null $maxValue = null,
+        int|float|null $step = null,
+        ?string $label = null,
+        array|string $rules = [],
+    ): TextInput {
+        $field = TextInput::make($name)->numeric();
+        if ($minValue !== null) {
+            $field->minValue($minValue);
+        }
+        if ($maxValue !== null) {
+            $field->maxValue($maxValue);
+        }
+        if ($step !== null) {
+            $field->step($step);
+        }
+
+        return $this->configure($field, $default, $required, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
+    public function decimal(
+        string $name,
+        int|float|null $default = null,
+        bool $required = false,
+        int $decimalPlaces = 2,
+        int|float|null $minValue = null,
+        int|float|null $maxValue = null,
+        ?string $label = null,
+        array|string $rules = [],
+    ): TextInput {
+        $decimalPlaces = max(0, min(12, $decimalPlaces));
+        $step = $decimalPlaces === 0 ? 1 : 1 / (10 ** $decimalPlaces);
+
+        return $this->number($name, $default, $required, $minValue, $maxValue, $step, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
+    public function money(
+        string $name,
+        int|float|null $default = null,
+        bool $required = false,
+        string $currency = 'USD',
+        int $decimalPlaces = 2,
+        int|float|null $minValue = 0,
+        int|float|null $maxValue = null,
+        ?string $label = null,
+        array|string $rules = [],
+    ): TextInput {
+        return $this->decimal($name, $default, $required, $decimalPlaces, $minValue, $maxValue, $label, $rules)
+            ->prefix(strtoupper($currency));
     }
 
     /** @param array<int, mixed>|string $rules */
@@ -110,6 +190,7 @@ final class BlockFields
         array $searchColumns = [],
         bool $preload = false,
         int $optionsLimit = 50,
+        ?Closure $configureUsing = null,
     ): Select {
         $instance = $this->modelInstance($model);
         $keyAttribute ??= $instance->getKeyName();
@@ -163,7 +244,15 @@ final class BlockFields
             ));
         }
 
-        return $this->configure($field, $multiple && $default === null ? [] : $default, $required, $label);
+        $field = $this->configure($field, $multiple && $default === null ? [] : $default, $required, $label);
+        if ($configureUsing !== null) {
+            $configured = $configureUsing($field);
+            if ($configured instanceof Select) {
+                $field = $configured;
+            }
+        }
+
+        return $field;
     }
 
     /**
@@ -404,6 +493,78 @@ final class BlockFields
         )->multiple($multiple);
     }
 
+    /** @return array{FileUpload, TextInput} */
+    public function imageSource(
+        string $upload = 'image',
+        string $external = 'external_image',
+        mixed $uploadDefault = null,
+        mixed $externalDefault = null,
+        bool $required = false,
+        ?string $uploadLabel = 'Upload image',
+        ?string $externalLabel = 'Stored path or HTTPS URL',
+        ?string $directory = null,
+    ): array {
+        return $this->mediaSource(
+            type: 'image',
+            upload: $upload,
+            external: $external,
+            uploadDefault: $uploadDefault,
+            externalDefault: $externalDefault,
+            required: $required,
+            uploadLabel: $uploadLabel,
+            externalLabel: $externalLabel,
+            directory: $directory,
+        );
+    }
+
+    /** @return array{FileUpload, TextInput} */
+    public function videoSource(
+        string $upload = 'video',
+        string $external = 'external_video',
+        mixed $uploadDefault = null,
+        mixed $externalDefault = null,
+        bool $required = false,
+        ?string $uploadLabel = 'Upload video',
+        ?string $externalLabel = 'Stored path or HTTPS URL',
+        ?string $directory = null,
+    ): array {
+        return $this->mediaSource(
+            type: 'video',
+            upload: $upload,
+            external: $external,
+            uploadDefault: $uploadDefault,
+            externalDefault: $externalDefault,
+            required: $required,
+            uploadLabel: $uploadLabel,
+            externalLabel: $externalLabel,
+            directory: $directory,
+        );
+    }
+
+    /** @return array{FileUpload, TextInput} */
+    public function fileSource(
+        string $upload = 'file',
+        string $external = 'external_file',
+        mixed $uploadDefault = null,
+        mixed $externalDefault = null,
+        bool $required = false,
+        ?string $uploadLabel = 'Upload file',
+        ?string $externalLabel = 'Stored path or HTTPS URL',
+        ?string $directory = null,
+    ): array {
+        return $this->mediaSource(
+            type: 'file',
+            upload: $upload,
+            external: $external,
+            uploadDefault: $uploadDefault,
+            externalDefault: $externalDefault,
+            required: $required,
+            uploadLabel: $uploadLabel,
+            externalLabel: $externalLabel,
+            directory: $directory,
+        );
+    }
+
     /** @template T of Field @param class-string<T> $component @return T */
     public function make(string $component, string $name): Field
     {
@@ -430,6 +591,39 @@ final class BlockFields
         }
 
         return $this->configure($field, $default, $required, $label);
+    }
+
+    /** @return array{FileUpload, TextInput} */
+    private function mediaSource(
+        string $type,
+        string $upload,
+        string $external,
+        mixed $uploadDefault,
+        mixed $externalDefault,
+        bool $required,
+        ?string $uploadLabel,
+        ?string $externalLabel,
+        ?string $directory,
+    ): array {
+        $uploadField = match ($type) {
+            'image' => $this->image($upload, $uploadDefault, label: $uploadLabel, directory: $directory),
+            'video' => $this->video($upload, $uploadDefault, label: $uploadLabel, directory: $directory),
+            default => $this->file($upload, $uploadDefault, label: $uploadLabel, directory: $directory),
+        };
+        $externalField = $this->text(
+            $external,
+            $externalDefault,
+            maxLength: 2048,
+            label: $externalLabel,
+            rules: [new SafeAssetSource($type)],
+        )->helperText('Optional. A safe HTTPS URL or an existing public/storage path takes priority; the uploaded file remains as fallback.');
+
+        if ($required) {
+            $uploadField->requiredWithout($external);
+            $externalField->requiredWithout($upload);
+        }
+
+        return [$uploadField, $externalField];
     }
 
     /** @param class-string<Model> $model */

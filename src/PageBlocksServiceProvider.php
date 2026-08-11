@@ -31,6 +31,7 @@ use DannAPI\FilamentPageBlocks\Registry\PageTemplateRegistry;
 use DannAPI\FilamentPageBlocks\Registry\PermissionRegistry;
 use DannAPI\FilamentPageBlocks\Rendering\DefaultFrontendDataProvider;
 use DannAPI\FilamentPageBlocks\Support\AdminNavigationManager;
+use DannAPI\FilamentPageBlocks\Support\AssetUrlResolver;
 use DannAPI\FilamentPageBlocks\Support\HeroiconOptions;
 use DannAPI\FilamentPageBlocks\Support\MediaLibrary;
 use DannAPI\FilamentPageBlocks\Support\MenuRepository;
@@ -54,6 +55,7 @@ final class PageBlocksServiceProvider extends ServiceProvider
         $this->app->singleton(MenuRepository::class);
         $this->app->singleton(MediaLibrary::class);
         $this->app->singleton(AdminNavigationManager::class);
+        $this->app->singleton(AssetUrlResolver::class);
         $this->app->singleton(HeroiconOptions::class);
         $this->app->singleton(PermissionDiscovery::class);
         $this->app->singleton(RichTextExcerpt::class);

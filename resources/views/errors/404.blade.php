@@ -1,25 +1,22 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+@extends('filament-page-blocks::template')
+
+@push('head')
     <meta name="robots" content="noindex, nofollow">
-    <title>Page not found — {{ config('app.name', 'Laravel') }}</title>
-    <style>
-        :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, sans-serif; }
-        body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #f8fafc; color: #0f172a; }
-        main { width: min(34rem, calc(100% - 3rem)); text-align: center; }
-        p { color: #64748b; line-height: 1.6; }
-        a { color: inherit; font-weight: 600; }
-        @media (prefers-color-scheme: dark) { body { background: #0f172a; color: #f8fafc; } p { color: #94a3b8; } }
-    </style>
-</head>
-<body>
+@endpush
+
+@section('content')
     <main>
-        <p>404</p>
-        <h1>Page not found</h1>
-        <p>The requested page does not exist or is not published.</p>
-        <a href="{{ url('/') }}">Return to the homepage</a>
+        <section class="error error_page">
+            <article class="error__inner">
+                <div class="error__oops wow bounceInDown" data-wow-duration="1.5s">
+                    <div class="error__image" style="background-image: url('{{ $frontend->asset('img/demo/error.jpg') }}')"></div>
+                </div>
+                <div class="error__text wow bounceInUp" data-wow-duration="1.5s">
+                    <h1>404 - PAGE NOT FOUND</h1>
+                    <p>The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+                    <a href="{{ $homeUrl }}" class="btn">Go to homepage</a>
+                </div>
+            </article>
+        </section>
     </main>
-</body>
-</html>
+@endsection

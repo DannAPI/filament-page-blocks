@@ -234,19 +234,52 @@ Common helpers available inside block classes:
 
 ```php
 self::text(...)
+self::integer(...)
+self::number(...)
+self::decimal(...)
+self::money(...)
 self::textarea(...)
 self::select(...)
+self::radio(...)
+self::toggleButtons(...)
+self::checkbox(...)
+self::checkboxList(...)
 self::toggle(...)
 self::richText(...)
+self::markdown(...)
+self::code(...)
+self::date(...)
+self::dateTime(...)
+self::time(...)
+self::color(...)
+self::tags(...)
+self::keyValue(...)
+self::slider(...)
+self::hidden(...)
 self::repeater(...)
 self::image(...)
 self::video(...)
 self::file(...)
 ```
 
-Additional fields are available through `self::fields()`: radio, toggle buttons, checkbox/list, Markdown, code, dates, time, color, tags, key-value, slider, hidden, and standard Filament components.
+Every helper returns the native Filament component and remains chainable. `self::fields()` exposes the shared `BlockFields` instance when a generic/custom component is needed.
 
 Upload validation uses `media.image_*`, `media.video_*`, and `media.file_*` config values.
+
+Use a paired media source when an editor may either upload a file or enter an existing path/HTTPS URL:
+
+```php
+public static function form(): array
+{
+    return [
+        ...self::imageSource('image', 'external_image', directory: 'heroes'),
+        ...self::videoSource('video', 'external_video'),
+        ...self::fileSource('document', 'external_document'),
+    ];
+}
+```
+
+The external value has rendering priority, while the uploaded value remains stored as fallback. The package never downloads remote assets server-side.
 
 ### Block relationships
 
@@ -270,9 +303,9 @@ Supported helpers include `belongsTo`, `belongsToMany`, `hasOne`, `hasMany`, thr
 
 ```blade
 <section>
-    <h1>{{ $data->get('title') }}</h1>
+    <h1>{{ $data->title }}</h1>
 
-    @if ($url = \DannAPI\FilamentPageBlocks\Support\Media::url($data->get('image')))
+    @if ($url = page_block_asset($data->external_image, fallback: $data->image))
         <img src="{{ $url }}" alt="{{ $data->get('title') }}">
     @endif
 
@@ -284,12 +317,18 @@ Supported helpers include `belongsTo`, `belongsToMany`, `hasOne`, `hasMany`, thr
 
 Available variables:
 
-- `$data`: immutable `BlockData`; use `get()`, `all()`, `model()`, `models()`, `relation()`;
+- `$data`: immutable `BlockData`; use property access (`$data->title`), `get()`, array access, `all()`, `model()`, `models()`, or `relation()`;
 - `$page`: current Page model;
 - `$block`: current PageBlock model;
 - `$generalInfo`: shared singleton model or `null`.
 
 Escape normal text with `{{ }}`. Sanitize rich HTML before `{!! !!}`; the built-in Rich Text block uses `RichTextSanitizer`.
+
+`page_block_asset()` is the single helper for images, video, downloads, and backgrounds. It accepts an existing public path, configured-disk path, or safe HTTPS URL and otherwise returns its optional fallback or `null`:
+
+```blade
+<section style="background-image: url('{{ page_block_asset($data->background_image) }}')">
+```
 
 ### Manual block registration
 
@@ -371,7 +410,7 @@ php artisan migrate
 php artisan make:admin-model Author --record-title-attribute=name
 ```
 
-The command reads the live database schema and generates a compact Filament Resource, policy, permission definition, and Manage page. Edit `form()` and `table()` in the generated Resource.
+The command reads the live database schema and generates a compact Filament Resource, policy, permission definition, and Manage page. It maps booleans, integers, decimals/money, dates, enums, JSON, conventional rich-text names, and conventional image/video/file names to `InteractsWithAdminFields`. Detected media fields are placed in the sidebar. Review domain validation and relationships in the generated Resource. An existing Resource is never changed unless `--force` is explicitly supplied.
 
 Options:
 
@@ -403,7 +442,7 @@ public static function form(Schema $schema): Schema
 }
 ```
 
-Table helpers: `textColumn`, `richTextColumn`, `booleanColumn`, `imageColumn`.
+Form helpers also include `integer`, `number`, `decimal`, `money`, checkbox/radio/toggle-button choices, Markdown, code, dates, color, tags, key-value, slider, hidden, and the paired media source helpers. Table helpers: `textColumn`, `richTextColumn`, `booleanColumn`, `imageColumn`, `numericColumn`, `moneyColumn`, `badgeColumn`, `dateColumn`, and `dateTimeColumn`. Infolist helpers: `textEntry`, `imageEntry`, `booleanEntry`, `dateTimeEntry`, and `moneyEntry`.
 
 ## Frontend rendering
 
@@ -414,7 +453,7 @@ GET /          Page with slug /
 GET /{slug}    Published Page by slug
 ```
 
-Missing or unpublished Pages return the publishable package 404 View. Admin, API, and configured reserved paths are excluded.
+Missing or unpublished Pages return HTTP 404 through a Blade View. If the application contains `resources/views/errors/404.blade.php`, it is used automatically. Otherwise the controller falls back to `filament-page-blocks::errors.404`. The package fallback extends `filament-page-blocks::template`, so it receives the same configured CSS, JavaScript, header, footer, menus, GeneralInfo, and frontend assets as normal Pages. Admin, API, and configured reserved paths are excluded.
 
 Manual controller rendering:
 
@@ -451,6 +490,8 @@ resources/views/vendor/filament-page-blocks/parts/footer.blade.php
 resources/views/vendor/filament-page-blocks/pages/default.blade.php
 resources/views/vendor/filament-page-blocks/errors/404.blade.php
 ```
+
+For one application-wide frontend error page, create `resources/views/errors/404.blade.php`; it takes priority without publishing package views. The View receives `$slug`, `$exception`, `$page`, `$template`, `$assets`, `$frontend`, `$homeUrl`, `$headerMenu`, `$footerMenu`, `$generalInfo`, `$navigation`, and `$site`. To reuse the package shell, start it with `@extends('filament-page-blocks::template')`. Use the vendor path above only when you want to customize the package fallback.
 
 Place site CSS, JS, fonts, and design images in `public/`. Configure URLs under `frontend.assets`.
 
@@ -533,7 +574,7 @@ Defaults:
 PAGE_BLOCKS_DISK=public
 ```
 
-Configure disk, directories, MIME types, and size limits under `media`. Run `php artisan storage:link` for the public disk. File paths are stored in JSON; files remain on the configured filesystem.
+Configure disk, directories, MIME types, and size limits under `media`. `media.asset_urls` controls whether safe external HTTPS sources are allowed, accepted HTTPS ports, and the image/video/file extensions accepted by `page_block_asset()`. Run `php artisan storage:link` for the public disk. File paths are stored in JSON; files remain on the configured filesystem. Remote assets are referenced in frontend markup and are never downloaded by the package.
 
 ## Roles, users, and permissions
 

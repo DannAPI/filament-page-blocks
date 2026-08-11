@@ -38,6 +38,9 @@
         "symfony/process": "^8.0"
     },
     "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
         "psr-4": {
             "DannAPI\\FilamentPageBlocks\\": "src/"
         }

@@ -10,7 +10,14 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use JsonSerializable;
 
-/** @implements ArrayAccess<string, mixed> */
+/**
+ * Immutable data passed to a block view.
+ *
+ * Values may be read through get(), array access, or property access:
+ * `$data->get('image')`, `$data['image']`, and `$data->image` are equivalent.
+ *
+ * @implements ArrayAccess<string, mixed>
+ */
 final readonly class BlockData implements ArrayAccess, JsonSerializable
 {
     /** @param array<string, mixed> $values */
@@ -22,6 +29,21 @@ final readonly class BlockData implements ArrayAccess, JsonSerializable
     public function get(string $key, mixed $default = null): mixed
     {
         return $this->values[$key] ?? $default;
+    }
+
+    public function __get(string $key): mixed
+    {
+        return $this->get($key);
+    }
+
+    public function __isset(string $key): bool
+    {
+        return isset($this->values[$key]);
+    }
+
+    public function has(string $key): bool
+    {
+        return array_key_exists($key, $this->values);
     }
 
     /** @return array<string, mixed> */

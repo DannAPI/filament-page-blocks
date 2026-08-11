@@ -4,21 +4,36 @@ declare(strict_types=1);
 
 namespace DannAPI\FilamentPageBlocks\Filament\Concerns;
 
+use BackedEnum;
 use Closure;
 use DannAPI\FilamentPageBlocks\Support\BlockFields;
 use DannAPI\FilamentPageBlocks\Support\RichTextExcerpt;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\CodeEditor;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\MorphToSelect;
 use Filament\Forms\Components\MorphToSelect\Type;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Slider;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -42,6 +57,30 @@ trait InteractsWithAdminFields
     }
 
     /** @param array<int, mixed>|string $rules */
+    final protected static function integer(string $name, ?int $default = null, bool $required = false, ?int $minValue = null, ?int $maxValue = null, ?string $label = null, array|string $rules = []): TextInput
+    {
+        return static::fields()->integer($name, $default, $required, $minValue, $maxValue, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
+    final protected static function number(string $name, int|float|null $default = null, bool $required = false, int|float|null $minValue = null, int|float|null $maxValue = null, int|float|null $step = null, ?string $label = null, array|string $rules = []): TextInput
+    {
+        return static::fields()->number($name, $default, $required, $minValue, $maxValue, $step, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
+    final protected static function decimal(string $name, int|float|null $default = null, bool $required = false, int $decimalPlaces = 2, int|float|null $minValue = null, int|float|null $maxValue = null, ?string $label = null, array|string $rules = []): TextInput
+    {
+        return static::fields()->decimal($name, $default, $required, $decimalPlaces, $minValue, $maxValue, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
+    final protected static function money(string $name, int|float|null $default = null, bool $required = false, string $currency = 'USD', int $decimalPlaces = 2, int|float|null $minValue = 0, int|float|null $maxValue = null, ?string $label = null, array|string $rules = []): TextInput
+    {
+        return static::fields()->money($name, $default, $required, $currency, $decimalPlaces, $minValue, $maxValue, $label, $rules);
+    }
+
+    /** @param array<int, mixed>|string $rules */
     final protected static function textarea(string $name, mixed $default = '', bool $required = false, ?int $maxLength = null, ?int $rows = null, ?string $label = null, array|string $rules = []): Textarea
     {
         return static::fields()->textarea($name, $default, $required, $maxLength, $rows, $label, $rules);
@@ -51,6 +90,29 @@ trait InteractsWithAdminFields
     final protected static function select(string $name, array|Closure $options = [], mixed $default = null, bool $required = false, bool $multiple = false, ?string $label = null): Select
     {
         return static::fields()->select($name, $options, $default, $required, $multiple, $label);
+    }
+
+    /** @param array<int|string, string>|Closure $options */
+    final protected static function radio(string $name, array|Closure $options, mixed $default = null, bool $required = false, ?string $label = null): Radio
+    {
+        return static::fields()->radio($name, $options, $default, $required, $label);
+    }
+
+    /** @param array<int|string, string>|Closure $options */
+    final protected static function toggleButtons(string $name, array|Closure $options, mixed $default = null, bool $required = false, ?string $label = null): ToggleButtons
+    {
+        return static::fields()->toggleButtons($name, $options, $default, $required, $label);
+    }
+
+    /** @param array<int|string, string>|Closure $options */
+    final protected static function checkboxList(string $name, array|Closure $options, array $default = [], bool $required = false, ?string $label = null): CheckboxList
+    {
+        return static::fields()->checkboxList($name, $options, $default, $required, $label);
+    }
+
+    final protected static function checkbox(string $name, bool $default = false, bool $required = false, ?string $label = null): Checkbox
+    {
+        return static::fields()->checkbox($name, $default, $required, $label);
     }
 
     final protected static function toggle(string $name, bool $default = false, bool $required = false, ?string $label = null): Toggle
@@ -88,6 +150,16 @@ trait InteractsWithAdminFields
         ], merge: true);
     }
 
+    final protected static function markdown(string $name, mixed $default = '', bool $required = false, ?string $label = null): MarkdownEditor
+    {
+        return static::fields()->markdown($name, $default, $required, $label);
+    }
+
+    final protected static function code(string $name, mixed $default = '', bool $required = false, ?string $label = null): CodeEditor
+    {
+        return static::fields()->code($name, $default, $required, $label);
+    }
+
     final protected static function date(string $name, mixed $default = null, bool $required = false, ?string $label = null): DatePicker
     {
         return static::fields()->date($name, $default, $required, $label);
@@ -101,6 +173,31 @@ trait InteractsWithAdminFields
     final protected static function time(string $name, mixed $default = null, bool $required = false, ?string $label = null): TimePicker
     {
         return static::fields()->time($name, $default, $required, $label);
+    }
+
+    final protected static function color(string $name, mixed $default = null, bool $required = false, ?string $label = null): ColorPicker
+    {
+        return static::fields()->color($name, $default, $required, $label);
+    }
+
+    final protected static function tags(string $name, array $default = [], bool $required = false, ?string $label = null): TagsInput
+    {
+        return static::fields()->tags($name, $default, $required, $label);
+    }
+
+    final protected static function keyValue(string $name, array $default = [], bool $required = false, ?string $label = null): KeyValue
+    {
+        return static::fields()->keyValue($name, $default, $required, $label);
+    }
+
+    final protected static function slider(string $name, int|float|null $default = null, bool $required = false, ?string $label = null): Slider
+    {
+        return static::fields()->slider($name, $default, $required, $label);
+    }
+
+    final protected static function hidden(string $name, mixed $default = null): Hidden
+    {
+        return static::fields()->hidden($name, $default);
     }
 
     /** @param array<Component>|Closure $schema */
@@ -123,6 +220,24 @@ trait InteractsWithAdminFields
     final protected static function file(string $name, mixed $default = null, bool $required = false, bool $multiple = false, ?string $label = null, ?string $directory = null): FileUpload
     {
         return static::fields()->file($name, $default, $required, $multiple, $label, $directory);
+    }
+
+    /** @return array{FileUpload, TextInput} */
+    final protected static function imageSource(string $upload = 'image', string $external = 'external_image', mixed $uploadDefault = null, mixed $externalDefault = null, bool $required = false, ?string $uploadLabel = 'Upload image', ?string $externalLabel = 'Stored path or HTTPS URL', ?string $directory = null): array
+    {
+        return static::fields()->imageSource($upload, $external, $uploadDefault, $externalDefault, $required, $uploadLabel, $externalLabel, $directory);
+    }
+
+    /** @return array{FileUpload, TextInput} */
+    final protected static function videoSource(string $upload = 'video', string $external = 'external_video', mixed $uploadDefault = null, mixed $externalDefault = null, bool $required = false, ?string $uploadLabel = 'Upload video', ?string $externalLabel = 'Stored path or HTTPS URL', ?string $directory = null): array
+    {
+        return static::fields()->videoSource($upload, $external, $uploadDefault, $externalDefault, $required, $uploadLabel, $externalLabel, $directory);
+    }
+
+    /** @return array{FileUpload, TextInput} */
+    final protected static function fileSource(string $upload = 'file', string $external = 'external_file', mixed $uploadDefault = null, mixed $externalDefault = null, bool $required = false, ?string $uploadLabel = 'Upload file', ?string $externalLabel = 'Stored path or HTTPS URL', ?string $directory = null): array
+    {
+        return static::fields()->fileSource($upload, $external, $uploadDefault, $externalDefault, $required, $uploadLabel, $externalLabel, $directory);
     }
 
     /**
@@ -164,14 +279,34 @@ trait InteractsWithAdminFields
         ?string $label = null,
         ?Closure $modifyQueryUsing = null,
         bool $preload = false,
+        array|bool $searchable = true,
+        int $optionsLimit = 50,
+        bool $ignoreRecord = false,
+        array|Closure|null $pivotData = null,
+        bool $disableSiblingOptions = false,
+        ?Closure $configureUsing = null,
     ): Select {
         $field = Select::make($name)
-            ->relationship($relationship, $titleAttribute, $modifyQueryUsing)
+            ->relationship($relationship, $titleAttribute, $modifyQueryUsing, $ignoreRecord)
             ->multiple($multiple)
             ->required($required)
             ->selectablePlaceholder(! $required)
-            ->searchable()
-            ->preload($preload);
+            ->searchable($searchable)
+            ->preload($preload)
+            ->optionsLimit($optionsLimit);
+
+        if ($pivotData !== null) {
+            $field->pivotData($pivotData);
+        }
+        if ($disableSiblingOptions) {
+            $field->disableOptionsWhenSelectedInSiblingRepeaterItems();
+        }
+        if ($configureUsing !== null) {
+            $configured = $configureUsing($field);
+            if ($configured instanceof Select) {
+                $field = $configured;
+            }
+        }
 
         return $label === null ? $field : $field->label($label);
     }
@@ -283,5 +418,64 @@ trait InteractsWithAdminFields
         }
 
         return $label === null ? $column : $column->label($label);
+    }
+
+    final protected static function numericColumn(string $name, bool $searchable = false, bool $sortable = true, ?string $label = null, ?int $decimalPlaces = null): TextColumn
+    {
+        return static::textColumn($name, $searchable, $sortable, $label)->numeric($decimalPlaces);
+    }
+
+    final protected static function moneyColumn(string $name, string|BackedEnum|Closure|null $currency = 'USD', bool $searchable = false, bool $sortable = true, ?string $label = null, int $divideBy = 0, ?int $decimalPlaces = null): TextColumn
+    {
+        return static::textColumn($name, $searchable, $sortable, $label)->money($currency, $divideBy, decimalPlaces: $decimalPlaces);
+    }
+
+    final protected static function badgeColumn(string $name, bool $searchable = false, bool $sortable = false, ?string $label = null): TextColumn
+    {
+        return static::textColumn($name, $searchable, $sortable, $label)->badge();
+    }
+
+    final protected static function dateColumn(string $name, bool $searchable = false, bool $sortable = true, ?string $label = null, ?string $format = null, ?string $timezone = null): TextColumn
+    {
+        return static::textColumn($name, $searchable, $sortable, $label)->date($format, $timezone);
+    }
+
+    final protected static function dateTimeColumn(string $name, bool $searchable = false, bool $sortable = true, ?string $label = null, ?string $format = null, ?string $timezone = null): TextColumn
+    {
+        return static::textColumn($name, $searchable, $sortable, $label)->dateTime($format, $timezone);
+    }
+
+    final protected static function textEntry(string $name, ?string $label = null): TextEntry
+    {
+        $entry = TextEntry::make($name);
+
+        return $label === null ? $entry : $entry->label($label);
+    }
+
+    final protected static function imageEntry(string $name, ?string $label = null, ?string $disk = null, ?string $visibility = null): ImageEntry
+    {
+        $entry = ImageEntry::make($name)->disk($disk ?? (string) config('filament-page-blocks.media.disk', 'public'));
+        if ($visibility !== null) {
+            $entry->visibility($visibility);
+        }
+
+        return $label === null ? $entry : $entry->label($label);
+    }
+
+    final protected static function booleanEntry(string $name, ?string $label = null): IconEntry
+    {
+        $entry = IconEntry::make($name)->boolean();
+
+        return $label === null ? $entry : $entry->label($label);
+    }
+
+    final protected static function dateTimeEntry(string $name, ?string $label = null, ?string $format = null, ?string $timezone = null): TextEntry
+    {
+        return static::textEntry($name, $label)->dateTime($format, $timezone);
+    }
+
+    final protected static function moneyEntry(string $name, string|BackedEnum|Closure|null $currency = 'USD', ?string $label = null, int $divideBy = 0, ?int $decimalPlaces = null): TextEntry
+    {
+        return static::textEntry($name, $label)->money($currency, $divideBy, decimalPlaces: $decimalPlaces);
     }
 }
