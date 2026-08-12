@@ -18,12 +18,17 @@ final class AssetUrlResolver
         return $resolved ?? $this->resolveSource($fallback);
     }
 
+    public function resolveForDisk(mixed $source, string $type, ?string $disk = null): ?string
+    {
+        return $this->resolveSource($source, $type, $disk);
+    }
+
     public function accepts(mixed $source, ?string $type = null): bool
     {
         return $this->resolveSource($source, $type) !== null;
     }
 
-    private function resolveSource(mixed $source, ?string $type = null): ?string
+    private function resolveSource(mixed $source, ?string $type = null, ?string $disk = null): ?string
     {
         if ($source instanceof Stringable) {
             $source = (string) $source;
@@ -41,7 +46,7 @@ final class AssetUrlResolver
         if ($this->isApplicationUrl($source)) {
             $path = (string) parse_url($source, PHP_URL_PATH);
 
-            return $this->resolveLocalPath($path, $type);
+            return $this->resolveLocalPath($path, $type, $disk);
         }
 
         if (filter_var($source, FILTER_VALIDATE_URL) !== false) {
@@ -52,10 +57,10 @@ final class AssetUrlResolver
             return null;
         }
 
-        return $this->resolveLocalPath($source, $type);
+        return $this->resolveLocalPath($source, $type, $disk);
     }
 
-    private function resolveLocalPath(string $source, ?string $type): ?string
+    private function resolveLocalPath(string $source, ?string $type, ?string $disk): ?string
     {
         $path = rawurldecode((string) parse_url($source, PHP_URL_PATH));
         $path = str_replace('\\', '/', trim($path));
@@ -75,8 +80,8 @@ final class AssetUrlResolver
 
         if (str_starts_with($path, 'storage/')) {
             $storagePath = substr($path, 8);
-            if ($storagePath !== '' && $this->disk()->exists($storagePath)) {
-                return $this->sanitizeUrl($this->absoluteStorageUrl($this->disk()->url($storagePath)));
+            if ($storagePath !== '' && $this->disk($disk)->exists($storagePath)) {
+                return $this->sanitizeUrl($this->absoluteStorageUrl($this->disk($disk)->url($storagePath)));
             }
 
             return null;
@@ -89,8 +94,8 @@ final class AssetUrlResolver
         }
 
         try {
-            if ($this->disk()->exists($path)) {
-                return $this->sanitizeUrl($this->absoluteStorageUrl($this->disk()->url($path)));
+            if ($this->disk($disk)->exists($path)) {
+                return $this->sanitizeUrl($this->absoluteStorageUrl($this->disk($disk)->url($path)));
             }
         } catch (Throwable) {
             return null;
@@ -204,8 +209,8 @@ final class AssetUrlResolver
         );
     }
 
-    private function disk(): FilesystemAdapter
+    private function disk(?string $disk = null): FilesystemAdapter
     {
-        return Storage::disk((string) config('filament-page-blocks.media.disk', 'public'));
+        return Storage::disk($disk ?: (string) config('filament-page-blocks.media.disk', 'public'));
     }
 }

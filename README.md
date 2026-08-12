@@ -576,6 +576,8 @@ PAGE_BLOCKS_DISK=public
 
 Configure disk, directories, MIME types, and size limits under `media`. `media.asset_urls` controls whether safe external HTTPS sources are allowed, accepted HTTPS ports, and the image/video/file extensions accepted by `page_block_asset()`. Run `php artisan storage:link` for the public disk. File paths are stored in JSON; files remain on the configured filesystem. Remote assets are referenced in frontend markup and are never downloaded by the package.
 
+The `image()`, `video()`, and `file()` helpers show edit-form previews for both normal files on the configured Laravel disk and existing source-controlled files under `public/`, such as `img/demo/product.jpg`. New and replacement uploads are still written to the configured disk and directory. Local paths are existence-checked, traversal is rejected, and external preview URLs must pass the package HTTPS and extension rules.
+
 ## Roles, users, and permissions
 
 - `admin`: unrestricted;

@@ -8,7 +8,6 @@ use DannAPI\FilamentPageBlocks\Filament\Concerns\InteractsWithAdminFields;
 use DannAPI\FilamentPageBlocks\Filament\Resources\GeneralInfoResource\Pages;
 use DannAPI\FilamentPageBlocks\Models\GeneralInfo;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
@@ -120,17 +119,14 @@ class GeneralInfoResource extends Resource
                                 ->alphaDash()
                                 ->distinct()
                                 ->maxLength(100),
-                            FileUpload::make('path')
-                                ->label('Image')
-                                ->image()
-                                ->disk((string) config('filament-page-blocks.media.disk', 'public'))
-                                ->directory(trim((string) config('filament-page-blocks.media.directory', 'page-blocks').'/general-info', '/'))
+                            self::image(
+                                'path',
+                                required: true,
+                                label: 'Image',
+                                directory: trim((string) config('filament-page-blocks.media.directory', 'page-blocks').'/general-info', '/'),
+                            )
                                 ->visibility('public')
-                                ->acceptedFileTypes((array) config('filament-page-blocks.media.image_mime_types', []))
-                                ->maxSize((int) config('filament-page-blocks.media.image_max_size', 5120))
-                                ->imagePreviewHeight((string) config('filament-page-blocks.media.image_preview_height', '220px'))
-                                ->openable()
-                                ->required(),
+                                ->openable(),
                         ])
                         ->columns(2)
                         ->defaultItems(0)

@@ -455,6 +455,7 @@ final class BlockFields
     public function image(string $name, mixed $default = null, bool $required = false, ?string $label = null, ?string $directory = null): FileUpload
     {
         $field = $this->upload(
+            type: 'image',
             name: $name,
             default: $default,
             required: $required,
@@ -470,6 +471,7 @@ final class BlockFields
     public function video(string $name, mixed $default = null, bool $required = false, ?string $label = null, ?string $directory = null): FileUpload
     {
         return $this->upload(
+            type: 'video',
             name: $name,
             default: $default,
             required: $required,
@@ -483,6 +485,7 @@ final class BlockFields
     public function file(string $name, mixed $default = null, bool $required = false, bool $multiple = false, ?string $label = null, ?string $directory = null): FileUpload
     {
         return $this->upload(
+            type: 'file',
             name: $name,
             default: $multiple && $default === null ? [] : $default,
             required: $required,
@@ -573,6 +576,7 @@ final class BlockFields
 
     /** @param array<int, string> $acceptedFileTypes */
     private function upload(
+        string $type,
         string $name,
         mixed $default,
         bool $required,
@@ -584,13 +588,55 @@ final class BlockFields
         $field = FileUpload::make($name)
             ->disk((string) config('filament-page-blocks.media.disk', 'public'))
             ->directory($directory ?? (string) config('filament-page-blocks.media.directory', 'page-blocks'))
-            ->maxSize($maxSize);
+            ->maxSize($maxSize)
+            ->fetchFileInformation(false)
+            ->getUploadedFileUsing(static function (FileUpload $component, string $file, string|array|null $storedFileNames) use ($type): ?array {
+                $url = app(AssetUrlResolver::class)->resolveForDisk($file, $type, $component->getDiskName());
+                if ($url === null) {
+                    return null;
+                }
+
+                $storedName = is_array($storedFileNames)
+                    ? ($storedFileNames[$file] ?? null)
+                    : $storedFileNames;
+
+                return [
+                    'name' => $storedName ?? basename((string) parse_url($file, PHP_URL_PATH)),
+                    'size' => 0,
+                    'type' => self::assetMimeType($file, $type),
+                    'url' => $url,
+                ];
+            });
 
         if ($acceptedFileTypes !== []) {
             $field->acceptedFileTypes($acceptedFileTypes);
         }
 
         return $this->configure($field, $default, $required, $label);
+    }
+
+    private static function assetMimeType(string $file, string $type): string
+    {
+        $extension = strtolower(pathinfo((string) parse_url($file, PHP_URL_PATH), PATHINFO_EXTENSION));
+
+        return match ($extension) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'avif' => 'image/avif',
+            'mp4', 'm4v' => 'video/mp4',
+            'webm' => 'video/webm',
+            'mov' => 'video/quicktime',
+            'pdf' => 'application/pdf',
+            'txt' => 'text/plain',
+            'csv' => 'text/csv',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            default => $type === 'image' ? 'image/*' : ($type === 'video' ? 'video/*' : 'application/octet-stream'),
+        };
     }
 
     /** @return array{FileUpload, TextInput} */
