@@ -552,7 +552,7 @@ Edit shared header/footer/site values at `/admin/general-info/1/edit`.
 {{ $generalInfo?->richText('footer_about') }}
 ```
 
-The record supports key/value data, named images, and sanitized named rich text.
+The record supports key/value data, named images, and sanitized named rich text. Its structure is developer-owned: define keys through configuration or an application seeder, then administrators can edit values without adding, deleting, renaming, or reordering entries. Empty Rich text and Images sections are hidden automatically.
 
 ## Menus and admin navigation
 

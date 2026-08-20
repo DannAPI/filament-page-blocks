@@ -16,6 +16,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 
 class GeneralInfoResource extends Resource
@@ -74,10 +75,11 @@ class GeneralInfoResource extends Resource
                         ->label('Values')
                         ->keyLabel('Key')
                         ->valueLabel('Value')
-                        ->keyPlaceholder('phone')
                         ->valuePlaceholder('Enter a value')
-                        ->addActionLabel('Add value')
-                        ->reorderable()
+                        ->addable(false)
+                        ->deletable(false)
+                        ->editableKeys(false)
+                        ->reorderable(false)
                         ->columnSpanFull(),
                 ])
                 ->columnSpanFull(),
@@ -89,22 +91,25 @@ class GeneralInfoResource extends Resource
                         ->schema([
                             TextInput::make('key')
                                 ->label('Key')
-                                ->placeholder('footer_about')
                                 ->required()
                                 ->alphaDash()
                                 ->distinct()
-                                ->maxLength(100),
+                                ->maxLength(100)
+                                ->disabled()
+                                ->dehydrated(),
                             self::richText('content', required: true, label: 'Content')
                                 ->columnSpanFull(),
                         ])
                         ->columns(1)
                         ->defaultItems(0)
                         ->itemLabel(static fn (array $state): string => (string) ($state['key'] ?? 'Rich text'))
-                        ->addActionLabel('Add rich text')
                         ->collapsed()
-                        ->reorderable()
+                        ->addable(false)
+                        ->deletable(false)
+                        ->reorderable(false)
                         ->columnSpanFull(),
                 ])
+                ->visible(static fn (?Model $record): bool => static::hasNamedEntries($record?->getAttribute('rich_text')))
                 ->columnSpanFull(),
             Section::make('Images')
                 ->description('Named images available in Blade through $generalInfo->image() and $generalInfo->imageUrl().')
@@ -114,11 +119,12 @@ class GeneralInfoResource extends Resource
                         ->schema([
                             TextInput::make('key')
                                 ->label('Key')
-                                ->placeholder('logo')
                                 ->required()
                                 ->alphaDash()
                                 ->distinct()
-                                ->maxLength(100),
+                                ->maxLength(100)
+                                ->disabled()
+                                ->dehydrated(),
                             self::image(
                                 'path',
                                 required: true,
@@ -131,11 +137,13 @@ class GeneralInfoResource extends Resource
                         ->columns(2)
                         ->defaultItems(0)
                         ->itemLabel(static fn (array $state): string => (string) ($state['key'] ?? 'Image'))
-                        ->addActionLabel('Add image')
                         ->collapsed()
-                        ->reorderable()
+                        ->addable(false)
+                        ->deletable(false)
+                        ->reorderable(false)
                         ->columnSpanFull(),
                 ])
+                ->visible(static fn (?Model $record): bool => static::hasNamedEntries($record?->getAttribute('images')))
                 ->columnSpanFull(),
         ]);
     }
@@ -164,5 +172,20 @@ class GeneralInfoResource extends Resource
             'create' => Pages\CreateGeneralInfo::route('/create'),
             'edit' => Pages\EditGeneralInfo::route('/{record}/edit'),
         ];
+    }
+
+    private static function hasNamedEntries(mixed $entries): bool
+    {
+        if (! is_array($entries)) {
+            return false;
+        }
+
+        foreach ($entries as $entry) {
+            if (is_array($entry) && is_string($entry['key'] ?? null) && $entry['key'] !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
