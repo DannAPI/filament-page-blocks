@@ -8,6 +8,7 @@ use BackedEnum;
 use Closure;
 use DannAPI\FilamentPageBlocks\Support\BlockFields;
 use DannAPI\FilamentPageBlocks\Support\RichTextExcerpt;
+use DannAPI\FilamentPageBlocks\Support\SortPositionManager;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\CodeEditor;
@@ -40,6 +41,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -268,6 +270,42 @@ trait InteractsWithAdminFields
         return Grid::make(['default' => 1, 'lg' => 3])
             ->schema($sections)
             ->columnSpanFull();
+    }
+
+    final protected static function reorderableTable(
+        Table $table,
+        string $column = 'sort',
+        string $direction = 'asc',
+        bool|Closure|null $condition = null,
+    ): Table {
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            throw new \InvalidArgumentException('The reorder direction must be [asc] or [desc].');
+        }
+
+        /** @var class-string<Model> $modelClass */
+        $modelClass = $table->getModel();
+        $slots = [];
+
+        return $table
+            ->reorderable($column, $condition, $direction)
+            ->paginatedWhileReordering()
+            ->beforeReordering(static function (array $order) use (&$slots, $modelClass, $column, $direction): void {
+                $slots = app(SortPositionManager::class)->captureSlots(
+                    $modelClass,
+                    $order,
+                    $column,
+                    $direction,
+                );
+            })
+            ->afterReordering(static function (array $order) use (&$slots, $modelClass, $column): void {
+                app(SortPositionManager::class)->restoreSlots(
+                    $modelClass,
+                    $order,
+                    $slots,
+                    $column,
+                );
+            })
+            ->defaultSort($column, $direction);
     }
 
     final protected static function relationship(

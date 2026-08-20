@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DannAPI\FilamentPageBlocks\Commands;
 
+use DannAPI\FilamentPageBlocks\Models\Concerns\HasSortablePosition;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\Filesystem;
@@ -99,10 +100,17 @@ final class MakeAdminModelCommand extends Command
 
         try {
             $this->addAdminFieldHelpers($files, $relativeName, $columnDefinitions);
+            $this->configureGeneratedSorting($files, $relativeName, $columns);
+            $this->configureSortableModel($files, $model, $columns);
             $this->configureGeneratedModalWidth($files, $relativeName);
             $this->configureFillable($files, $model, $columns);
             if (! $this->option('no-policy')) {
-                $this->createPolicyAndPermissions($files, $modelFqn, $relativeName);
+                $this->createPolicyAndPermissions(
+                    $files,
+                    $modelFqn,
+                    $relativeName,
+                    supportsReordering: in_array('sort', $columns, true),
+                );
             }
         } catch (Throwable $exception) {
             $this->components->error($exception->getMessage());
@@ -474,6 +482,81 @@ final class MakeAdminModelCommand extends Command
     }
 
     /** @param array<int, string> $columns */
+    private function configureGeneratedSorting(Filesystem $files, string $relativeName, array $columns): void
+    {
+        if (! in_array('sort', $columns, true)) {
+            return;
+        }
+
+        $path = $this->resourcePath($relativeName);
+        if (! $files->isFile($path)) {
+            throw new RuntimeException("Unable to locate the generated Resource: {$path}");
+        }
+
+        $contents = $files->get($path);
+        if (str_contains($contents, 'self::reorderableTable($table')) {
+            return;
+        }
+
+        $tableMethod = strpos($contents, 'public static function table(Table $table): Table');
+        $returnStatement = $tableMethod === false ? false : strpos($contents, 'return $table', $tableMethod);
+        if ($returnStatement === false) {
+            throw new RuntimeException('Unable to enable drag-and-drop sorting in the generated Resource.');
+        }
+
+        $contents = substr_replace(
+            $contents,
+            'return self::reorderableTable($table)',
+            $returnStatement,
+            strlen('return $table'),
+        );
+
+        $files->put($path, $contents, true);
+        $this->components->info("Enabled drag-and-drop sorting by [sort] in: {$path}");
+    }
+
+    /** @param array<int, string> $columns */
+    private function configureSortableModel(Filesystem $files, Model $model, array $columns): void
+    {
+        if (! in_array('sort', $columns, true)) {
+            return;
+        }
+
+        $sortableTrait = HasSortablePosition::class;
+        if (in_array($sortableTrait, class_uses_recursive($model), true)) {
+            return;
+        }
+
+        $traitUsage = '    use \\DannAPI\\FilamentPageBlocks\\Models\\Concerns\\HasSortablePosition;';
+        $reflection = new ReflectionClass($model);
+        $path = $reflection->getFileName();
+        if (! is_string($path) || ! $files->isFile($path)) {
+            throw new RuntimeException('Unable to locate the generated model file for sortable position configuration.');
+        }
+
+        $contents = $files->get($path);
+        if (str_contains($contents, $traitUsage)) {
+            return;
+        }
+
+        $class = preg_quote($reflection->getShortName(), '/');
+        $updated = preg_replace(
+            '/(class\s+'.$class.'\s+extends\s+[^\{]+\{\R)/',
+            '$1'.$traitUsage.PHP_EOL.PHP_EOL,
+            $contents,
+            1,
+            $count,
+        );
+
+        if (! is_string($updated) || $count !== 1) {
+            throw new RuntimeException('Unable to add HasSortablePosition to the model safely.');
+        }
+
+        $files->put($path, $updated, true);
+        $this->components->info("Enabled automatic [sort] position shifts in: {$path}");
+    }
+
+    /** @param array<int, string> $columns */
     private function recordTitleAttribute(array $columns): string
     {
         $requested = $this->option('record-title-attribute');
@@ -531,8 +614,12 @@ final class MakeAdminModelCommand extends Command
         $this->components->info("Configured fillable columns in: {$path}");
     }
 
-    private function createPolicyAndPermissions(Filesystem $files, string $modelFqn, string $relativeName): void
-    {
+    private function createPolicyAndPermissions(
+        Filesystem $files,
+        string $modelFqn,
+        string $relativeName,
+        bool $supportsReordering,
+    ): void {
         $modelClass = class_basename($modelFqn);
         $relativeNamespace = str_contains($relativeName, '\\') ? Str::beforeLast($relativeName, '\\') : '';
         $policyRootNamespace = trim((string) config('filament-page-blocks.generator.admin_model.policy_namespace', 'App\\Policies'), '\\');
@@ -549,6 +636,9 @@ final class MakeAdminModelCommand extends Command
                 '{{ modelFqn }}' => $modelFqn,
                 '{{ modelClass }}' => $modelClass,
                 '{{ permissionPrefix }}' => $permissionPrefix,
+                '{{ reorderMethod }}' => $supportsReordering
+                    ? "\n    public function reorder(Authenticatable \$user): bool\n    {\n        return \$this->access->allows(\$user, '{$permissionPrefix}.update');\n    }\n"
+                    : '',
             ]);
             $files->ensureDirectoryExists(dirname($policyPath));
             $files->put($policyPath, $contents, true);

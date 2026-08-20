@@ -31,6 +31,7 @@ final readonly class {{ modelClass }}Policy
     {
         return $this->access->allows($user, '{{ permissionPrefix }}.update');
     }
+{{ reorderMethod }}
 
     public function delete(Authenticatable $user, {{ modelClass }} $record): bool
     {

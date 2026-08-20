@@ -410,7 +410,7 @@ php artisan migrate
 php artisan make:admin-model Author --record-title-attribute=name
 ```
 
-The command reads the live database schema and generates a compact Filament Resource, policy, permission definition, and Manage page. It maps booleans, integers, decimals/money, dates, enums, JSON, conventional rich-text names, and conventional image/video/file names to `InteractsWithAdminFields`. Detected media fields are placed in the sidebar. Review domain validation and relationships in the generated Resource. An existing Resource is never changed unless `--force` is explicitly supplied.
+The command reads the live database schema and generates a compact Filament Resource, policy, permission definition, and Manage page. It maps booleans, integers, decimals/money, dates, enums, JSON, conventional rich-text names, and conventional image/video/file names to `InteractsWithAdminFields`. Detected media fields are placed in the sidebar. When the table has a `sort` column, the generator adds `HasSortablePosition`, orders the index by `sort`, and enables paginated drag-and-drop. Only records visible on the current page are loaded and reordered; their global position slots are preserved, so records on other pages remain unchanged. Editing `sort` directly moves the record to that global position and shifts only the affected range. The generated policy authorizes reordering through the existing `update` permission. Review domain validation and relationships in the generated Resource. An existing Resource is never changed unless `--force` is explicitly supplied.
 
 Options:
 
@@ -443,6 +443,18 @@ public static function form(Schema $schema): Schema
 ```
 
 Form helpers also include `integer`, `number`, `decimal`, `money`, checkbox/radio/toggle-button choices, Markdown, code, dates, color, tags, key-value, slider, hidden, and the paired media source helpers. Table helpers: `textColumn`, `richTextColumn`, `booleanColumn`, `imageColumn`, `numericColumn`, `moneyColumn`, `badgeColumn`, `dateColumn`, and `dateTimeColumn`. Infolist helpers: `textEntry`, `imageEntry`, `booleanEntry`, `dateTimeEntry`, and `moneyEntry`.
+
+For an existing Resource that uses the trait, the same behavior can be enabled without regenerating it:
+
+```php
+public static function table(Table $table): Table
+{
+    return self::reorderableTable($table)
+        ->columns([/* ... */]);
+}
+```
+
+The corresponding policy must expose `reorder()`; generated policies map it to the model's `update` permission.
 
 ## Frontend rendering
 
