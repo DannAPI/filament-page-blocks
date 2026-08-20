@@ -114,6 +114,7 @@ final class AdminStateExporter
             return [
                 'name' => (string) $menu->name,
                 'handle' => (string) $menu->handle,
+                'suppressed_admin_targets' => $menu->suppressedAdminTargets(),
                 'items' => $menu->allItems->map(static fn ($item): array => [
                     'reference' => 'item-'.$item->getKey(),
                     'parent_reference' => $item->parent_id === null ? null : 'item-'.$item->parent_id,

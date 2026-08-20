@@ -561,6 +561,7 @@ Create menu items at `/admin/menus`.
 - `header` and `footer` are available in frontend views as `$headerMenu` and `$footerMenu`.
 - `admin` controls Filament sidebar visibility, labels, order, custom links, children, and Heroicons.
 - Resources and Pages are synchronized into the admin menu automatically.
+- The default `Admin`, `Header`, and `Footer` menu records cannot be deleted. Individual synchronized sections inside `Admin` can be removed after confirmation and added again later; intentional removals are included in `page-blocks:export-admin-state`.
 - Native Filament authorization is still applied.
 
 Render a frontend menu:

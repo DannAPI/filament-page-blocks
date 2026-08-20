@@ -7,6 +7,7 @@ namespace DannAPI\FilamentPageBlocks\Filament\Resources;
 use DannAPI\FilamentPageBlocks\Enums\MenuLinkType;
 use DannAPI\FilamentPageBlocks\Filament\Resources\MenuResource\Pages;
 use DannAPI\FilamentPageBlocks\Models\Menu;
+use DannAPI\FilamentPageBlocks\Models\MenuItem;
 use DannAPI\FilamentPageBlocks\Support\AdminNavigationManager;
 use DannAPI\FilamentPageBlocks\Support\HeroiconOptions;
 use Filament\Actions\Action;
@@ -104,8 +105,11 @@ final class MenuResource extends Resource
                     ->addActionLabel('Add menu item')
                     ->collapsed()
                     ->cloneable()
-                    ->deleteAction(static fn (Action $action): Action => self::protectAutomaticAdminItemAction($action))
+                    ->deleteAction(static fn (Action $action): Action => self::configureAdminItemDeleteAction($action))
                     ->cloneAction(static fn (Action $action): Action => self::protectAutomaticAdminItemAction($action))
+                    ->afterCreate(static fn (Model $record) => self::restoreAutomaticAdminItem($record))
+                    ->afterUpdate(static fn (Model $record) => self::restoreAutomaticAdminItem($record))
+                    ->afterDelete(static fn (Model $record) => self::suppressAutomaticAdminItem($record))
                     ->columnSpanFull(),
             ]),
         ]);
@@ -379,6 +383,57 @@ final class MenuResource extends Resource
 
             return $type !== MenuLinkType::Admin && $type !== MenuLinkType::Admin->value;
         });
+    }
+
+    private static function configureAdminItemDeleteAction(Action $action): Action
+    {
+        return $action
+            ->requiresConfirmation(static function (array $arguments, Repeater $component): bool {
+                $key = $arguments['item'] ?? null;
+                if (! is_string($key)) {
+                    return false;
+                }
+
+                return self::linkTypeValue($component->getRawItemState($key)['link_type'] ?? null)
+                    === MenuLinkType::Admin->value;
+            })
+            ->modalHeading('Remove admin navigation item?')
+            ->modalDescription('The item will be removed from the admin navigation. You can add the same Filament section again later.');
+    }
+
+    private static function suppressAutomaticAdminItem(Model $record): void
+    {
+        if (! $record instanceof MenuItem || self::linkTypeValue($record->getAttribute('link_type')) !== MenuLinkType::Admin->value) {
+            return;
+        }
+
+        $target = $record->getAttribute('url');
+        $menu = $record->menu()->first();
+        if (! is_string($target) || $target === '' || ! $menu instanceof Menu || ! self::isAdminMenu($menu)) {
+            return;
+        }
+
+        $menu->suppressAdminTarget($target);
+    }
+
+    private static function restoreAutomaticAdminItem(Model $record): void
+    {
+        if (! $record instanceof MenuItem || self::linkTypeValue($record->getAttribute('link_type')) !== MenuLinkType::Admin->value) {
+            return;
+        }
+
+        $target = $record->getAttribute('url');
+        $menu = $record->menu()->first();
+        if (! is_string($target) || $target === '' || ! $menu instanceof Menu || ! self::isAdminMenu($menu)) {
+            return;
+        }
+
+        $menu->restoreAdminTarget($target);
+    }
+
+    private static function isAdminMenu(Menu $menu): bool
+    {
+        return $menu->getAttribute('handle') === config('filament-page-blocks.menus.admin.handle', 'admin');
     }
 
     public static function table(Table $table): Table

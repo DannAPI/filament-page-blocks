@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Menu extends Model
 {
-    protected $fillable = ['name', 'handle'];
+    protected $fillable = ['name', 'handle', 'suppressed_admin_targets'];
 
     protected static function booted(): void
     {
@@ -27,6 +27,47 @@ class Menu extends Model
 
         return in_array((string) $this->getAttribute('handle'), $handles, true)
             || in_array((string) $this->getRawOriginal('handle'), $handles, true);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'suppressed_admin_targets' => 'array',
+        ];
+    }
+
+    /** @return array<int, string> */
+    public function suppressedAdminTargets(): array
+    {
+        return array_values(array_unique(array_filter(
+            (array) $this->getAttribute('suppressed_admin_targets'),
+            static fn (mixed $target): bool => is_string($target) && $target !== '',
+        )));
+    }
+
+    public function suppressAdminTarget(string $target): void
+    {
+        if ($target === '' || in_array($target, $this->suppressedAdminTargets(), true)) {
+            return;
+        }
+
+        $this->forceFill([
+            'suppressed_admin_targets' => [...$this->suppressedAdminTargets(), $target],
+        ])->saveQuietly();
+    }
+
+    public function restoreAdminTarget(string $target): void
+    {
+        $targets = array_values(array_filter(
+            $this->suppressedAdminTargets(),
+            static fn (string $suppressed): bool => $suppressed !== $target,
+        ));
+
+        if ($targets === $this->suppressedAdminTargets()) {
+            return;
+        }
+
+        $this->forceFill(['suppressed_admin_targets' => $targets])->saveQuietly();
     }
 
     /** @return array<int, string> */

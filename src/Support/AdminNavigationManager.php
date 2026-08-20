@@ -52,7 +52,11 @@ final class AdminNavigationManager
             ? $this->sync($panel)
             : $this->adminMenu();
 
-        if ($menu === null || ! $menu->allItems()->exists()) {
+        if ($menu === null) {
+            return $this->buildDefault($builder, $panel);
+        }
+
+        if (! $menu->allItems()->exists() && $menu->suppressedAdminTargets() === []) {
             return $this->buildDefault($builder, $panel);
         }
 
@@ -80,7 +84,11 @@ final class AdminNavigationManager
                 ->whereNotNull('url')
                 ->pluck('url')
                 ->all();
-            $missing = array_values(array_diff($this->orderedTargets($panel), $existing));
+            $missing = array_values(array_diff(
+                $this->orderedTargets($panel),
+                $existing,
+                $menu->suppressedAdminTargets(),
+            ));
             $iconsSupported = $this->menuIconsSupported($menu);
 
             $menu->getConnection()->transaction(function () use ($menu, $missing, $panel, $iconsSupported): void {

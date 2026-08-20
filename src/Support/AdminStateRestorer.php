@@ -162,6 +162,10 @@ final class AdminStateRestorer
             }
             $menu = $menuModel::query()->updateOrCreate(['handle' => $attributes['handle']], [
                 'name' => (string) ($attributes['name'] ?? $attributes['handle']),
+                'suppressed_admin_targets' => array_values(array_filter(
+                    (array) ($attributes['suppressed_admin_targets'] ?? []),
+                    static fn (mixed $target): bool => is_string($target) && $target !== '',
+                )),
             ]);
             $menu->allItems()->delete();
             $references = [];
