@@ -288,6 +288,11 @@ trait InteractsWithBlockFields
         return static::fields()->file($name, $default, $required, $multiple, $label, $directory);
     }
 
+    final protected static function media(string $name, mixed $default = null, bool $required = false, bool $multiple = false, ?string $label = null, ?string $directory = null): FileUpload
+    {
+        return static::fields()->media($name, $default, $required, $multiple, $label, $directory);
+    }
+
     /** @return array{FileUpload, TextInput} */
     final protected static function imageSource(string $upload = 'image', string $external = 'external_image', mixed $uploadDefault = null, mixed $externalDefault = null, bool $required = false, ?string $uploadLabel = 'Upload image', ?string $externalLabel = 'Stored path or HTTPS URL', ?string $directory = null): array
     {

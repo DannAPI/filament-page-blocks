@@ -496,6 +496,26 @@ final class BlockFields
         )->multiple($multiple);
     }
 
+    public function media(string $name, mixed $default = null, bool $required = false, bool $multiple = false, ?string $label = null, ?string $directory = null): FileUpload
+    {
+        return $this->upload(
+            type: 'media',
+            name: $name,
+            default: $multiple && $default === null ? [] : $default,
+            required: $required,
+            label: $label,
+            directory: $directory,
+            acceptedFileTypes: array_values(array_unique([
+                ...(array) config('filament-page-blocks.media.image_mime_types', []),
+                ...(array) config('filament-page-blocks.media.video_mime_types', []),
+            ])),
+            maxSize: max(
+                (int) config('filament-page-blocks.media.image_max_size', 5120),
+                (int) config('filament-page-blocks.media.video_max_size', 51200),
+            ),
+        )->multiple($multiple);
+    }
+
     /** @return array{FileUpload, TextInput} */
     public function imageSource(
         string $upload = 'image',
@@ -589,9 +609,29 @@ final class BlockFields
             ->disk((string) config('filament-page-blocks.media.disk', 'public'))
             ->directory($directory ?? (string) config('filament-page-blocks.media.directory', 'page-blocks'))
             ->maxSize($maxSize)
+            ->extraAlpineAttributes([
+                'x-on:loadedmetadata.capture' => <<<'JS'
+                    const video = $event.target;
+                    if (video instanceof HTMLVideoElement && !video.poster && video.paused && video.currentTime === 0 && Number.isFinite(video.duration) && video.duration > 0) {
+                        try { video.currentTime = Math.min(3, video.duration / 2); } catch (_) {}
+                    }
+                    JS,
+            ], merge: true)
             ->fetchFileInformation(false)
             ->getUploadedFileUsing(static function (FileUpload $component, string $file, string|array|null $storedFileNames) use ($type): ?array {
-                $url = app(AssetUrlResolver::class)->resolveForDisk($file, $type, $component->getDiskName());
+                $mimeType = self::assetMimeType($file, $type);
+                $assetType = $type;
+                // Preserve file()->acceptedFileTypes([...]) customizations when rehydrating.
+                // Only explicitly accepted image/video MIME types may use their asset group.
+                if ($type === 'file') {
+                    $group = explode('/', $mimeType, 2)[0];
+                    $accepted = $component->getAcceptedFileTypes() ?? [];
+                    if (in_array($group, ['image', 'video'], true)
+                        && (in_array($mimeType, $accepted, true) || in_array($group.'/*', $accepted, true))) {
+                        $assetType = $group;
+                    }
+                }
+                $url = app(AssetUrlResolver::class)->resolveForDisk($file, $assetType, $component->getDiskName());
                 if ($url === null) {
                     return null;
                 }
@@ -603,7 +643,7 @@ final class BlockFields
                 return [
                     'name' => $storedName ?? basename((string) parse_url($file, PHP_URL_PATH)),
                     'size' => 0,
-                    'type' => self::assetMimeType($file, $type),
+                    'type' => $mimeType,
                     'url' => $url,
                 ];
             });

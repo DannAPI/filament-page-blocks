@@ -181,6 +181,9 @@ final class AssetUrlResolver
             'file' => ['pdf', 'txt', 'doc', 'docx', 'xls', 'xlsx'],
         ]);
         $extensionGroups = array_values(array_filter($groups, 'is_array'));
+        if ($type === 'media') {
+            $groups['media'] = array_merge((array) ($groups['image'] ?? []), (array) ($groups['video'] ?? []));
+        }
         $allowed = $type === null
             ? ($extensionGroups === [] ? [] : array_merge(...$extensionGroups))
             : (array) ($groups[$type] ?? []);

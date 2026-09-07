@@ -708,3 +708,9 @@ Before deployment:
 - review generated admin-state seeders before committing;
 - verify policies and manager permissions;
 - keep application block classes and views in source control.
+
+### Mixed photo and video uploads
+
+Use `self::media('source', required: true)` in blocks or Resources using `InteractsWithAdminFields`. Like `file()`, it accepts `default`, `required`, `multiple`, `label`, and `directory`, and returns a chainable Filament `FileUpload` (`->disk('public')->visibility('public')`). It accepts the configured image/video MIME types and uses the larger configured image/video size limit. Existing `file()->acceptedFileTypes([...])` image/video fields also retain their stored-file previews; document-only fields stay restricted.
+
+Filament's bundled player displays uploaded videos. Videos without posters seek briefly forward on initial load to show a frame, without autoplay, FFmpeg or creating thumbnail files. The browser must support the video's codec. For frontend thumbnails use a manual image or a native `<video>` with a metadata-loaded seek, never `<img src="movie.mp4">`. Livewire/PHP/web-server upload limits still apply independently.
